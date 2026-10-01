@@ -66,6 +66,15 @@ Signed by the attestor with ed25519, all numbers big-endian. 152 bytes.
 | 80 to 87 | expiry | A timestamp in seconds. |
 | 88 to 151 | signature | Over bytes 0 to 87. |
 
+## Deployment
+
+Stellar mainnet.
+
+| | Address |
+|---|---|
+| Contract | [CDJZCLXBQ6QRRQIPOV73HXOL5HWZBDUWHRESMD23PORSFAGZD3ELZQMH](https://stellar.expert/explorer/public/contract/CDJZCLXBQ6QRRQIPOV73HXOL5HWZBDUWHRESMD23PORSFAGZD3ELZQMH) |
+| Admin | [GDMS6MPSI7DKP4VRZ4NK6LHFWUJ4QAHZ3VO22NYCKBLNOBSWDANGGAME](https://stellar.expert/explorer/public/account/GDMS6MPSI7DKP4VRZ4NK6LHFWUJ4QAHZ3VO22NYCKBLNOBSWDANGGAME) |
+
 ## Building
 
 From the repository root:

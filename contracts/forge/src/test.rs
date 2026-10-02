@@ -112,8 +112,9 @@ fn test_ignite_collect() {
     assert_eq!(env.auths()[0].0, payer);
 
     // 10 ION at power 1, locked for two days, for the receiver.
-    assert_eq!(entry.ready, 1_000_000 + 172_800);
-    assert_eq!(entry.receiver, f.receiver);
+    assert_eq!(entry.2, 1_000_000 + 172_800);
+    assert_eq!(entry.0, f.receiver);
+    assert_eq!(entry.1, 100_000_000);
     assert_eq!(f.balance(&f.credit, &payer), 100_000_000_000 - 2_424_000_000);
 
     // Too early.
@@ -121,7 +122,7 @@ fn test_ignite_collect() {
     assert_eq!(f.balance(&f.ion, &f.receiver), 0);
 
     // Public, no auth, paid to the receiver and not to the payer.
-    env.ledger().set_timestamp(entry.ready);
+    env.ledger().set_timestamp(entry.2);
     assert_eq!(f.client.collect(&id), 100_000_000);
     assert_eq!(env.auths().len(), 0);
     assert_eq!(f.balance(&f.ion, &f.receiver), 100_000_000);
@@ -171,7 +172,7 @@ fn test_ignite_premium() {
         let entry = f.client.ignite(&payer, &3_000_000_000, power, &f.quote([*power as u8; 16], BASE, f.valid()));
 
         assert_eq!(before - f.balance(&f.credit, &payer), *cost, "cost mismatch at power {}", power);
-        assert_eq!(entry.ready, 1_000_000 + seconds, "time mismatch at power {}", power);
+        assert_eq!(entry.2, 1_000_000 + seconds, "time mismatch at power {}", power);
     }
 }
 
@@ -224,7 +225,7 @@ fn test_ignite_expiry() {
     f.client.ignite(&payer, &10_000_000, &1, &f.quote([2u8; 16], BASE, now + 172_799));
 
     // Dead by the time it can be collected, no second use.
-    env.ledger().set_timestamp(entry.ready);
+    env.ledger().set_timestamp(entry.2);
     f.client.collect(&BytesN::from_array(&env, &[1u8; 16]));
     assert_eq!(code(f.client.try_ignite(&payer, &10_000_000, &24, &f.quote([1u8; 16], BASE, now + 7_199))), 1);
 }
@@ -252,6 +253,7 @@ fn test_ignite_amounts() {
     assert_eq!(code(f.client.try_ignite(&payer, &-1, &1, &f.quote(ID, BASE, f.valid()))), 2);
     assert_eq!(code(f.client.try_ignite(&payer, &100_000_000, &0, &f.quote(ID, BASE, f.valid()))), 2);
     assert_eq!(code(f.client.try_ignite(&payer, &100_000_000, &25, &f.quote(ID, BASE, f.valid()))), 2);
+    assert_eq!(code(f.client.try_ignite(&payer, &(u64::MAX as i128 + 1), &1, &f.quote(ID, BASE, f.valid()))), 2);
 }
 
 #[test]
@@ -265,7 +267,7 @@ fn test_collect_refill() {
     let entry = f.client.ignite(&payer, &100_000_000, &1, &f.quote(ID, BASE, f.valid()));
 
     // Collect fails, the entry stays.
-    env.ledger().set_timestamp(entry.ready);
+    env.ledger().set_timestamp(entry.2);
     assert!(f.client.try_collect(&id).is_err());
     assert_eq!(f.balance(&f.ion, &f.receiver), 0);
 
@@ -287,7 +289,7 @@ fn test_collect_guards() {
 
     // Too early, then anyone, always the receiver.
     assert_eq!(code(f.client.try_collect(&id)), 5);
-    env.ledger().set_timestamp(entry.ready);
+    env.ledger().set_timestamp(entry.2);
     assert_eq!(f.client.collect(&id), 100_000_000);
     assert_eq!(f.balance(&f.ion, &f.receiver), 100_000_000);
 }
@@ -336,7 +338,7 @@ fn test_examples() {
     for (i, (amount, power, base)) in ROWS.iter().enumerate() {
         let before = f.balance(&f.credit, &payer);
         let entry = f.client.ignite(&payer, amount, power, &f.quote([i as u8 + 1; 16], *base, f.valid()));
-        let seconds = entry.ready - env.ledger().timestamp();
+        let seconds = entry.2 - env.ledger().timestamp();
         println!(
             "{:>15} {:>5} {:>8} {:>15} {:>9}",
             amount,

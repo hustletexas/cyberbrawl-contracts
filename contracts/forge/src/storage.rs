@@ -53,25 +53,21 @@ pub fn set_attestor(env: &Env, pubkey: &BytesN<32>) {
         .set::<Storage, BytesN<32>>(&Storage::Attestor, pubkey);
 }
 
+// The entries are keyed by the id itself, no enum around it: the key is paid in rent too.
 pub fn has_entry(env: &Env, id: &BytesN<16>) -> bool {
-    env.storage().persistent().has(&Storage::Entry(id.clone()))
+    env.storage().persistent().has(id)
 }
 
 pub fn get_entry(env: &Env, id: &BytesN<16>) -> Option<Entry> {
-    env.storage().persistent()
-        .get::<Storage, Entry>(&Storage::Entry(id.clone()))
+    env.storage().persistent().get::<BytesN<16>, Entry>(id)
 }
 
 pub fn set_entry(env: &Env, id: &BytesN<16>, entry: &Entry) {
-    let key = Storage::Entry(id.clone());
-    let max_ttl = env.storage().max_ttl();
-    let threshold = max_ttl.saturating_sub(120_960);
-    env.storage().persistent().set::<Storage, Entry>(&key, entry);
-    env.storage().persistent().extend_ttl(&key, threshold, max_ttl);
+    env.storage().persistent().set::<BytesN<16>, Entry>(id, entry);
 }
 
 pub fn remove_entry(env: &Env, id: &BytesN<16>) {
-    env.storage().persistent().remove(&Storage::Entry(id.clone()));
+    env.storage().persistent().remove(id);
 }
 
 pub fn extend_ttl(env: &Env) {

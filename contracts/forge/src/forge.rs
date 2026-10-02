@@ -62,6 +62,7 @@ pub fn ignite(env: &Env, payer: Address, amount: i128, power: u32,
     if amount <= 0 || power == 0 || power > PARAMS.max_power {
         return Err(Error::InvalidAmount);
     }
+    let stroops = u64::try_from(amount).map_err(|_| Error::InvalidAmount)?;
 
     // The forge is single task.
     if storage::has_entry(env, &quote.id) {
@@ -79,7 +80,7 @@ pub fn ignite(env: &Env, payer: Address, amount: i128, power: u32,
 
     token::Client::new(env, &storage::get_credit(env)).burn(&payer, &cost);
 
-    let entry = Entry { receiver: quote.receiver, amount, ready };
+    let entry = Entry(quote.receiver, stroops, ready);
     storage::set_entry(env, &quote.id, &entry);
     storage::extend_ttl(env);
 
@@ -87,18 +88,19 @@ pub fn ignite(env: &Env, payer: Address, amount: i128, power: u32,
 }
 
 pub fn collect(env: &Env, id: BytesN<16>) -> Result<i128, Error> {
-    let entry = storage::get_entry(env, &id).ok_or(Error::NoEntry)?;
-    if env.ledger().timestamp() < entry.ready {
+    let Entry(receiver, stroops, ready) = storage::get_entry(env, &id).ok_or(Error::NoEntry)?;
+    if env.ledger().timestamp() < ready {
         return Err(Error::NotReady);
     }
 
+    let amount = stroops as i128;
     token::Client::new(env, &storage::get_ion(env))
-        .transfer(&env.current_contract_address(), &entry.receiver, &entry.amount);
+        .transfer(&env.current_contract_address(), &receiver, &amount);
 
     storage::remove_entry(env, &id);
     storage::extend_ttl(env);
 
-    Ok(entry.amount)
+    Ok(amount)
 }
 
 pub fn set_attestor(env: &Env, pubkey: BytesN<32>) -> Result<(), Error> {

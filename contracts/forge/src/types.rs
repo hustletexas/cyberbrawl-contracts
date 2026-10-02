@@ -39,11 +39,7 @@ pub struct Quote {
 
 #[derive(Clone)]
 #[contracttype]
-pub struct Entry {
-    pub receiver: Address,
-    pub amount: i128,
-    pub ready: u64,
-}
+pub struct Entry(pub Address, pub u64, pub u64);
 
 #[derive(Clone, Copy)]
 #[contracterror]
@@ -63,5 +59,4 @@ pub enum Storage {
     Credit,
     Ion,
     Attestor,
-    Entry(BytesN<16>),
 }
